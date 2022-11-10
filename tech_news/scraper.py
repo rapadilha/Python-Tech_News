@@ -1,6 +1,7 @@
 import requests
 from time import sleep
 from parsel import Selector
+import re
 
 
 # Requisito 1
@@ -33,7 +34,38 @@ def scrape_next_page_link(html_content):
 
 # Requisito 4
 def scrape_noticia(html_content):
-    """Seu código deve vir aqui"""
+    selector = Selector(html_content)
+
+    url = selector.css('head link[rel=canonical]::attr(href)').get()
+
+    title = selector.css('h1::text').get().replace('\xa0', '')
+
+    timestamp = selector.css('li.meta-date::text').get()
+
+    writer = selector.css('a.url::text').get()
+
+    comments_count = len(selector.css('ol.comment-list li').getall())
+
+    raw_html = selector.css('.entry-content p').get()
+    CLEANR = re.compile('<.*?>|&([a-z0-9]+|#[0-9]{1,6}|#x[0-9a-f]{1,6});')
+    cleantext = re.sub(CLEANR, '', raw_html)
+    summary = cleantext.strip()
+
+    tags = selector.css('li a[rel=tag]::text').getall()
+
+    category = selector.css('span.label::text').get()
+
+    noticia = {
+        'url': url,
+        "title": title,
+        "timestamp": timestamp,
+        "writer": writer,
+        "comments_count": comments_count,
+        "summary": summary,
+        "tags": tags,
+        "category": category
+    }
+    return noticia
 
 
 # Requisito 5
